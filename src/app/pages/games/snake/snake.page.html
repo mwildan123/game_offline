@@ -1,0 +1,187 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home" text=""></ion-back-button>
+    </ion-buttons>
+
+    <ion-title>
+      <div class="game-header-title">
+        <img src="assets/images/games/snake.png" alt="Snake" class="header-logo-icon">
+        <span>Classic Snake</span>
+      </div>
+    </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button (click)="soundService.toggleMute()" class="header-btn" aria-label="Toggle Sound">
+        <ion-icon [name]="soundService.isSoundMuted() ? 'volume-mute-outline' : 'volume-high-outline'"></ion-icon>
+      </ion-button>
+      <ion-button (click)="togglePause()" class="header-btn" aria-label="Pause/Resume">
+        <ion-icon [name]="isPaused ? 'play-outline' : 'pause-outline'"></ion-icon>
+      </ion-button>
+      <ion-button (click)="resetGame()" class="header-btn" aria-label="Restart">
+        <ion-icon name="refresh-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="snake-content no-select" scrollY="false">
+  <!-- Top Score Bar -->
+  <div class="score-bar">
+    <div class="score-card">
+      <span class="label">SKOR</span>
+      <span class="value">{{ score }}</span>
+    </div>
+
+    <div class="score-card trophy">
+      <span class="label">REKOR</span>
+      <span class="value">
+        <ion-icon name="trophy"></ion-icon>
+        {{ highScore }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Settings Switcher -->
+  <div class="game-controls-bar">
+    <!-- Wall Mode -->
+    <div class="segmented-control">
+      <button
+        [class.active]="wallMode === 'pass'"
+        (click)="setWallMode('pass')"
+      >
+        Tembus
+      </button>
+      <button
+        [class.active]="wallMode === 'solid'"
+        (click)="setWallMode('solid')"
+      >
+        Dinding
+      </button>
+    </div>
+
+    <!-- Speed Mode -->
+    <div class="segmented-control">
+      <button
+        [class.active]="speedMode === 'slow'"
+        (click)="setSpeed('slow')"
+      >
+        Santai
+      </button>
+      <button
+        [class.active]="speedMode === 'normal'"
+        (click)="setSpeed('normal')"
+      >
+        Normal
+      </button>
+      <button
+        [class.active]="speedMode === 'fast'"
+        (click)="setSpeed('fast')"
+      >
+        Cepat
+      </button>
+    </div>
+  </div>
+
+  <!-- Canvas Stage with Swipe Gestures -->
+  <div class="canvas-wrapper">
+    <canvas
+      #snakeCanvas
+      class="game-canvas"
+      (touchstart)="onTouchStart($event)"
+      (touchmove)="onTouchMove($event)"
+      (touchend)="onTouchEnd()"
+      (touchcancel)="onTouchEnd()"
+    ></canvas>
+
+    <!-- Tap to Start prompt if not started -->
+    @if (!hasStarted && !isGameOver) {
+      <div
+        class="start-hint-overlay"
+        (click)="startGame()"
+        (pointerdown)="startGame(); $event.stopPropagation()"
+      >
+        <div class="hint-box">
+          <ion-icon name="play-circle"></ion-icon>
+          <span>Ketuk untuk Mulai</span>
+        </div>
+      </div>
+    }
+
+    <!-- Resume prompt if paused mid-game -->
+    @if (hasStarted && isPaused && !isGameOver) {
+      <div
+        class="start-hint-overlay"
+        (click)="togglePause()"
+        (pointerdown)="togglePause(); $event.stopPropagation()"
+      >
+        <div class="hint-box">
+          <ion-icon name="play"></ion-icon>
+          <span>Lanjutkan Permainan</span>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Virtual D-Pad Controller -->
+  <div class="dpad-container">
+    <div class="dpad-grid">
+      <div></div>
+      <button class="dpad-btn up" (pointerdown)="setDirection(0, -1); $event.preventDefault()" (click)="setDirection(0, -1)" aria-label="Atas">
+        <ion-icon name="chevron-up"></ion-icon>
+      </button>
+      <div></div>
+
+      <button class="dpad-btn left" (pointerdown)="setDirection(-1, 0); $event.preventDefault()" (click)="setDirection(-1, 0)" aria-label="Kiri">
+        <ion-icon name="chevron-back"></ion-icon>
+      </button>
+      <div class="dpad-center"></div>
+      <button class="dpad-btn right" (pointerdown)="setDirection(1, 0); $event.preventDefault()" (click)="setDirection(1, 0)" aria-label="Kanan">
+        <ion-icon name="chevron-forward"></ion-icon>
+      </button>
+
+      <div></div>
+      <button class="dpad-btn down" (pointerdown)="setDirection(0, 1); $event.preventDefault()" (click)="setDirection(0, 1)" aria-label="Bawah">
+        <ion-icon name="chevron-down"></ion-icon>
+      </button>
+      <div></div>
+    </div>
+  </div>
+
+  <!-- Game Over Modal Overlay -->
+  @if (isGameOver) {
+    <div class="game-over-overlay">
+      <div class="game-over-card">
+        <div class="trophy-badge">🐍</div>
+        <h2>Game Selesai!</h2>
+        <p>Ular menabrak rintangan atau dirinya sendiri!</p>
+
+        @if (isNewRecord) {
+          <span class="new-record-tag">🏆 Rekor Baru!</span>
+        }
+
+        <div class="score-stats">
+          <div class="stat-item">
+            <span class="stat-label">Skor Akhir</span>
+            <span class="stat-value">{{ score }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Rekor Tertinggi</span>
+            <span class="stat-value">{{ highScore }}</span>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <ion-button expand="block" color="primary" (click)="startGame()">
+            <ion-icon slot="start" name="refresh"></ion-icon>
+            Main Lagi
+          </ion-button>
+          <ion-button expand="block" fill="outline" color="medium" routerLink="/home">
+            <ion-icon slot="start" name="home"></ion-icon>
+            Kembali ke Menu
+          </ion-button>
+        </div>
+      </div>
+    </div>
+  }
+</ion-content>

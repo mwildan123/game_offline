@@ -1,0 +1,184 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home" text=""></ion-back-button>
+    </ion-buttons>
+
+    <ion-title>
+      <div class="game-header-title">
+        <img src="assets/images/games/tic-tac-toe.png" alt="Tic-Tac-Toe" class="header-logo-icon">
+        <span>Tic-Tac-Toe</span>
+      </div>
+    </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button (click)="soundService.toggleMute()" class="header-btn" aria-label="Toggle Sound">
+        <ion-icon [name]="soundService.isSoundMuted() ? 'volume-mute-outline' : 'volume-high-outline'"></ion-icon>
+      </ion-button>
+      <ion-button (click)="resetBoard()" class="header-btn" aria-label="Restart Round">
+        <ion-icon name="refresh-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="game-content no-select">
+  <!-- Mode Selector -->
+  <div class="mode-toggles-bar">
+    <div class="segmented-control">
+      <button
+        [class.active]="gameMode === 'bot'"
+        (click)="setGameMode('bot')"
+      >
+        <ion-icon name="hardware-chip-outline"></ion-icon>
+        VS Bot Pintar
+      </button>
+      <button
+        [class.active]="gameMode === 'pvp'"
+        (click)="setGameMode('pvp')"
+      >
+        <ion-icon name="people-outline"></ion-icon>
+        2 Pemain (1 HP)
+      </button>
+    </div>
+
+    <!-- Bot Difficulty if Bot mode -->
+    @if (gameMode === 'bot') {
+      <div class="segmented-control mini">
+        <button
+          [class.active]="botDifficulty === 'smart'"
+          (click)="setBotDifficulty('smart')"
+        >
+          Pintar (AI)
+        </button>
+        <button
+          [class.active]="botDifficulty === 'normal'"
+          (click)="setBotDifficulty('normal')"
+        >
+          Normal
+        </button>
+      </div>
+    }
+  </div>
+
+  <!-- Scoreboard -->
+  <div class="scoreboard">
+    <div class="score-box x-box" [class.turn-active]="currentPlayer === 'X' && !winner">
+      <span class="symbol">X</span>
+      <span class="name">{{ gameMode === 'bot' ? 'Kamu' : 'Pemain 1' }}</span>
+      <span class="count">{{ scoreX }}</span>
+    </div>
+
+    <div class="score-box draw-box">
+      <span class="symbol">🤝</span>
+      <span class="name">Seri</span>
+      <span class="count">{{ scoreDraw }}</span>
+    </div>
+
+    <div class="score-box o-box" [class.turn-active]="currentPlayer === 'O' && !winner">
+      <span class="symbol">O</span>
+      <span class="name">{{ gameMode === 'bot' ? 'Bot Pintar' : 'Pemain 2' }}</span>
+      <span class="count">{{ scoreO }}</span>
+    </div>
+  </div>
+
+  <!-- Status / Turn Banner -->
+  <div class="turn-status-banner">
+    @if (!winner && !isBotThinking) {
+      <div class="turn-indicator">
+        Giliran:
+        <span [class.x-text]="currentPlayer === 'X'" [class.o-text]="currentPlayer === 'O'">
+          {{ currentPlayer === 'X' ? (gameMode === 'bot' ? 'Kamu (X)' : 'Pemain X') : (gameMode === 'bot' ? 'Bot (O)' : 'Pemain O') }}
+        </span>
+      </div>
+    }
+    @if (isBotThinking) {
+      <div class="thinking-indicator">
+        <ion-spinner name="dots"></ion-spinner>
+        Bot sedang berpikir...
+      </div>
+    }
+  </div>
+
+  <!-- 3x3 Grid Board -->
+  <div class="board-wrapper">
+    <div class="ttt-grid">
+      @for (cell of board; track i; let i = $index) {
+        <div
+          class="ttt-cell"
+          [class.winning]="isWinningCell(i)"
+          (click)="makeMove(i)"
+        >
+          @if (cell === 'X') {
+            <span class="cell-x">X</span>
+          }
+          @if (cell === 'O') {
+            <span class="cell-o">O</span>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Reset Stats button -->
+  <div class="bottom-actions">
+    <button class="reset-btn" (click)="resetScores()">
+      <ion-icon name="trash-outline"></ion-icon>
+      Reset Catatan Skor
+    </button>
+  </div>
+
+  <!-- Game End Modal Overlay -->
+  @if (winner) {
+    <div class="game-over-overlay">
+      <div class="game-over-card">
+        <div class="trophy-badge">
+          {{ winner === 'draw' ? '🤝' : (winner === 'X' ? '🏆' : '🤖') }}
+        </div>
+
+        @if (winner === 'X') {
+          <h2>{{ gameMode === 'bot' ? 'Kamu Menang!' : 'Pemain X Menang!' }}</h2>
+        }
+        @if (winner === 'O') {
+          <h2>{{ gameMode === 'bot' ? 'Bot Pintar Menang!' : 'Pemain O Menang!' }}</h2>
+        }
+        @if (winner === 'draw') {
+          <h2>Permainan Seri!</h2>
+        }
+
+        @if (winner !== 'draw') {
+          <p>Garis 3 simbol berhasil terbentuk!</p>
+        }
+        @if (winner === 'draw') {
+          <p>Papan penuh tanpa ada garis 3 simbol.</p>
+        }
+
+        <div class="score-stats">
+          <div class="stat-item">
+            <span class="stat-label">Pemain X</span>
+            <span class="stat-value">{{ scoreX }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Seri</span>
+            <span class="stat-value">{{ scoreDraw }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">{{ gameMode === 'bot' ? 'Bot AI' : 'Pemain O' }}</span>
+            <span class="stat-value">{{ scoreO }}</span>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <ion-button expand="block" color="primary" (click)="resetBoard()">
+            <ion-icon slot="start" name="refresh"></ion-icon>
+            Ronde Berikutnya
+          </ion-button>
+          <ion-button expand="block" fill="outline" color="medium" routerLink="/home">
+            <ion-icon slot="start" name="home"></ion-icon>
+            Kembali ke Menu
+          </ion-button>
+        </div>
+      </div>
+    </div>
+  }
+</ion-content>

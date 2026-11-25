@@ -1,0 +1,120 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home" text=""></ion-back-button>
+    </ion-buttons>
+
+    <ion-title>
+      <div class="game-header-title">
+        <img src="assets/images/games/memory-match.png" alt="Memory Match" class="header-logo-icon">
+        <span>Memory Match</span>
+      </div>
+    </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button (click)="soundService.toggleMute()" class="header-btn" aria-label="Toggle Sound">
+        <ion-icon [name]="soundService.isSoundMuted() ? 'volume-mute-outline' : 'volume-high-outline'"></ion-icon>
+      </ion-button>
+      <ion-button (click)="restartGame()" class="header-btn" aria-label="Restart">
+        <ion-icon name="refresh-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="game-content no-select" scrollY="false">
+  <!-- Stats Bar -->
+  <div class="stats-bar">
+    <div class="stat-card">
+      <span class="label">LANGKAH</span>
+      <span class="value">{{ moves }}</span>
+    </div>
+
+    <div class="stat-card">
+      <span class="label">WAKTU</span>
+      <span class="value">{{ formatTime(secondsElapsed) }}</span>
+    </div>
+
+    <div class="stat-card trophy">
+      <span class="label">REKOR</span>
+      <span class="value">
+        <ion-icon name="trophy"></ion-icon>
+        {{ highScore }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Pairs Progress -->
+  <div class="progress-info">
+    <span>Pasangan Cocok: <strong>{{ matchedPairs }}</strong> / {{ totalPairs }}</span>
+  </div>
+
+  <!-- 4x4 Grid of 3D Flip Cards -->
+  <div class="board-wrapper">
+    <div class="memory-grid">
+      @for (card of cards; track card.id) {
+        <div
+          class="card-scene"
+          (click)="flipCard(card)"
+        >
+          <div
+            class="card-inner"
+            [class.is-flipped]="card.isFlipped || card.isMatched"
+            [class.is-matched]="card.isMatched"
+          >
+            <!-- Card Back (Hidden pattern) -->
+            <div class="card-face card-back">
+              <ion-icon name="help"></ion-icon>
+            </div>
+
+            <!-- Card Front (Revealed Icon) -->
+            <div class="card-face card-front" [style.color]="card.color">
+              <ion-icon [name]="card.icon"></ion-icon>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Victory Modal Overlay -->
+  @if (isGameOver) {
+    <div class="game-over-overlay">
+      <div class="game-over-card">
+        <div class="trophy-badge">🎉</div>
+        <h2>Luar Biasa!</h2>
+        <p>Kamu berhasil mencocokkan seluruh 8 pasang kartu ingatan!</p>
+
+        @if (isNewRecord) {
+          <span class="new-record-tag">🏆 Rekor Baru!</span>
+        }
+
+        <div class="score-stats">
+          <div class="stat-item">
+            <span class="stat-label">Skor Poin</span>
+            <span class="stat-value">{{ score }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Langkah</span>
+            <span class="stat-value">{{ moves }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Waktu</span>
+            <span class="stat-value">{{ formatTime(secondsElapsed) }}</span>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <ion-button expand="block" color="primary" (click)="restartGame()">
+            <ion-icon slot="start" name="refresh"></ion-icon>
+            Main Lagi
+          </ion-button>
+          <ion-button expand="block" fill="outline" color="medium" routerLink="/home">
+            <ion-icon slot="start" name="home"></ion-icon>
+            Kembali ke Menu
+          </ion-button>
+        </div>
+      </div>
+    </div>
+  }
+</ion-content>

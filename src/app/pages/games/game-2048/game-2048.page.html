@@ -1,0 +1,144 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home" text=""></ion-back-button>
+    </ion-buttons>
+
+    <ion-title>
+      <div class="game-header-title">
+        <img src="assets/images/games/game-2048.png" alt="2048" class="header-logo-icon">
+        <span>2048</span>
+      </div>
+    </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button (click)="soundService.toggleMute()" class="header-btn" aria-label="Toggle Sound">
+        <ion-icon [name]="soundService.isSoundMuted() ? 'volume-mute-outline' : 'volume-high-outline'"></ion-icon>
+      </ion-button>
+      <ion-button (click)="restartGame()" class="header-btn" aria-label="Restart">
+        <ion-icon name="refresh-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="game-content no-select" scrollY="false">
+  <!-- Top Score Bar -->
+  <div class="score-bar">
+    <div class="score-card">
+      <span class="label">SKOR</span>
+      <span class="value">{{ score }}</span>
+    </div>
+
+    <div class="score-card trophy">
+      <span class="label">REKOR</span>
+      <span class="value">
+        <ion-icon name="trophy"></ion-icon>
+        {{ highScore }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Instruction Hint -->
+  <div class="swipe-hint">
+    <ion-icon name="swap-horizontal-outline"></ion-icon>
+    <span>Geser layar ke atas, bawah, kiri, atau kanan</span>
+  </div>
+
+  <!-- 4x4 Grid Board with Swipe Detection -->
+  <div
+    class="board-container"
+    (touchstart)="onTouchStart($event)"
+    (touchmove)="onTouchMove($event)"
+    (touchend)="onTouchEnd()"
+    (touchcancel)="onTouchEnd()"
+  >
+    <div class="board-grid">
+      @for (row of grid; track r; let r = $index) {
+        <div class="grid-row">
+          @for (cell of row; track c; let c = $index) {
+            <div class="grid-cell">
+              @if (cell) {
+                <div
+                  class="tile"
+                  [ngClass]="getTileClass(cell.value)"
+                  [class.tile-new]="cell.isNew"
+                  [class.tile-merged]="cell.isMerged"
+                >
+                  {{ cell.value }}
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Quick Action Buttons -->
+  <div class="quick-actions">
+    <button class="action-btn undo" [disabled]="!canUndo" (click)="undo()">
+      <ion-icon name="arrow-undo"></ion-icon>
+      <span>Kembalikan Langkah</span>
+    </button>
+  </div>
+
+  <!-- Win 2048 Modal Overlay -->
+  @if (hasWon && !keepPlayingAfterWin) {
+    <div class="game-over-overlay">
+      <div class="game-over-card">
+        <div class="trophy-badge">🎉</div>
+        <h2>Selamat! Kamu Menang!</h2>
+        <p>Kamu berhasil membentuk petak angka <strong>2048</strong>!</p>
+
+        <div class="action-buttons">
+          <ion-button expand="block" color="success" (click)="continuePlaying()">
+            <ion-icon slot="start" name="arrow-forward"></ion-icon>
+            Lanjut Bermain
+          </ion-button>
+          <ion-button expand="block" fill="outline" color="primary" (click)="restartGame()">
+            <ion-icon slot="start" name="refresh"></ion-icon>
+            Main Ulang
+          </ion-button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Game Over Modal Overlay -->
+  @if (isGameOver) {
+    <div class="game-over-overlay">
+      <div class="game-over-card">
+        <div class="trophy-badge">🎲</div>
+        <h2>Game Selesai!</h2>
+        <p>Tidak ada lagi petak yang dapat digabungkan!</p>
+
+        @if (isNewRecord) {
+          <span class="new-record-tag">🏆 Rekor Baru!</span>
+        }
+
+        <div class="score-stats">
+          <div class="stat-item">
+            <span class="stat-label">Skor Akhir</span>
+            <span class="stat-value">{{ score }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Rekor Tertinggi</span>
+            <span class="stat-value">{{ highScore }}</span>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <ion-button expand="block" color="primary" (click)="restartGame()">
+            <ion-icon slot="start" name="refresh"></ion-icon>
+            Main Lagi
+          </ion-button>
+          <ion-button expand="block" fill="outline" color="medium" routerLink="/home">
+            <ion-icon slot="start" name="home"></ion-icon>
+            Kembali ke Menu
+          </ion-button>
+        </div>
+      </div>
+    </div>
+  }
+</ion-content>

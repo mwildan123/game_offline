@@ -1,20 +1,239 @@
-<ion-header [translucent]="true">
+<ion-header [translucent]="true" class="ion-no-border home-header">
   <ion-toolbar>
-    <ion-title>
-      Blank
-    </ion-title>
+    <div slot="start" class="brand-title">
+      <img src="assets/images/app-logo.png" alt="SakuGame Logo" class="brand-app-icon" />
+      <div class="brand-text">
+        <span class="main-title">SakuGame</span>
+        <span class="brand-tagline">Mini Game Offline</span>
+      </div>
+    </div>
+
+    <ion-buttons slot="end">
+      <!-- Settings Button replacing individual toggles -->
+      <ion-button (click)="openSettings()" class="settings-nav-btn" aria-label="Buka Pengaturan">
+        <ion-icon name="settings-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Blank</ion-title>
-    </ion-toolbar>
-  </ion-header>
-
-  <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
+<ion-content [fullscreen]="true" class="home-content">
+  <!-- Hero Section -->
+  <div class="hero-banner">
+    <div class="hero-glow"></div>
+    <div class="hero-content">
+      <h1>Game Seru di Sakumu</h1>
+      <p>Koleksi mini-game santai tanpa kuota, tanpa iklan, dan super lancar.</p>
+    </div>
   </div>
+
+  <!-- Games Grid -->
+  <div class="games-container">
+    <div class="game-cards-grid">
+      @for (game of games; track game.id) {
+        <div
+          class="game-card"
+          [ngClass]="game.gradientClass"
+          (click)="openGame(game)"
+        >
+          <div class="card-bg-shape"></div>
+
+          <div class="card-top-row">
+            <div class="game-logo-wrapper">
+              <img [src]="game.logo" [alt]="game.title" class="game-logo-img">
+            </div>
+          </div>
+
+          <div class="card-middle">
+            <span class="game-subtitle">{{ game.subtitle }}</span>
+            <h3 class="game-title">{{ game.title }}</h3>
+            <p class="game-desc">{{ game.description }}</p>
+          </div>
+
+          <div class="card-bottom-row">
+            <div class="high-score-box">
+              <ion-icon name="trophy"></ion-icon>
+              <span>Rekor: <strong>{{ highScores[game.id] || 0 }}</strong> {{ game.highScoreUnit }}</span>
+            </div>
+
+            <button class="play-btn" aria-label="Main Sekarang">
+              <span>Main</span>
+              <ion-icon name="play"></ion-icon>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Settings Modal (Bottom Sheet style) -->
+  <ion-modal
+    [isOpen]="isSettingsOpen"
+    (didDismiss)="closeSettings()"
+    class="settings-modal"
+    [initialBreakpoint]="0.88"
+    [breakpoints]="[0, 0.88, 1]"
+  >
+    <ng-template>
+      <ion-header class="ion-no-border modal-header">
+        <ion-toolbar>
+          <ion-title>
+            <div class="modal-title-box">
+              <ion-icon name="settings-sharp" class="modal-icon"></ion-icon>
+              <span>Pengaturan</span>
+            </div>
+          </ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="closeSettings()" class="modal-close-btn" aria-label="Tutup">
+              <ion-icon name="close"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="modal-content ion-padding">
+        <!-- 1. TEMA TAMPILAN -->
+        <div class="setting-group">
+          <div class="group-header">
+            <ion-icon name="color-palette-outline"></ion-icon>
+            <span>Tema Tampilan</span>
+          </div>
+          <div class="setting-card">
+            <div class="theme-switch-container">
+              <button
+                class="theme-btn"
+                [class.active]="!isDarkMode"
+                (click)="setTheme(false)"
+              >
+                <ion-icon name="sunny"></ion-icon>
+                <span>Terang</span>
+              </button>
+              <button
+                class="theme-btn"
+                [class.active]="isDarkMode"
+                (click)="setTheme(true)"
+              >
+                <ion-icon name="moon"></ion-icon>
+                <span>Gelap</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. AUDIO & SUARA -->
+        <div class="setting-group">
+          <div class="group-header">
+            <ion-icon name="volume-high-outline"></ion-icon>
+            <span>Audio & Suara</span>
+          </div>
+          <div class="setting-card">
+            <!-- Mute/Unmute Toggle -->
+            <div class="setting-row">
+              <div class="row-info">
+                <div class="row-title">Efek Suara (SFX)</div>
+                <div class="row-desc">Suara sentuhan, kombo, skor & game over</div>
+              </div>
+              <ion-toggle
+                [checked]="!isMuted"
+                (ionChange)="toggleSound($event)"
+                color="primary"
+                aria-label="Efek Suara"
+              ></ion-toggle>
+            </div>
+
+            <!-- Volume Range Slider -->
+            <div class="setting-row column" [class.disabled-row]="isMuted">
+              <div class="volume-header-row">
+                <span class="row-title">Volume Suara</span>
+                <span class="volume-badge">{{ isMuted ? 0 : volumePercent }}%</span>
+              </div>
+              <div class="range-wrapper">
+                <ion-icon [name]="isMuted ? 'volume-mute-outline' : (volumePercent > 50 ? 'volume-high-outline' : 'volume-low-outline')"></ion-icon>
+                <ion-range
+                  [disabled]="isMuted"
+                  [min]="0"
+                  [max]="100"
+                  [step]="5"
+                  [value]="volumePercent"
+                  (ionChange)="onVolumeChange($event)"
+                  aria-label="Volume Slider"
+                ></ion-range>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. GETARAN (HAPTIC) -->
+        <div class="setting-group">
+          <div class="group-header">
+            <ion-icon name="pulse-outline"></ion-icon>
+            <span>Getaran (Haptic)</span>
+          </div>
+          <div class="setting-card">
+            <div class="setting-row">
+              <div class="row-info">
+                <div class="row-title">Getar Sentuhan</div>
+                <div class="row-desc">Sensasi fisik saat memecahkan balok, makan, atau menang</div>
+              </div>
+              <ion-toggle
+                [checked]="isHaptic"
+                (ionChange)="toggleHaptic($event)"
+                color="primary"
+                aria-label="Getar Sentuhan"
+              ></ion-toggle>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. REKOR SKOR & RESET -->
+        <div class="setting-group">
+          <div class="group-header">
+            <ion-icon name="trophy-outline"></ion-icon>
+            <span>Rekor Skor Tertinggi</span>
+          </div>
+          <div class="setting-card">
+            <div class="scores-summary">
+              @for (game of games; track game.id) {
+                <div class="score-summary-item">
+                  <span class="game-name">{{ game.title }}</span>
+                  <span class="score-val">{{ highScores[game.id] || 0 }} {{ game.highScoreUnit }}</span>
+                </div>
+              }
+            </div>
+
+            <div class="reset-wrapper">
+              <button class="reset-scores-btn" (click)="isResetAlertOpen = true">
+                <ion-icon name="trash-outline"></ion-icon>
+                <span>Reset Semua Rekor</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. TENTANG APLIKASI -->
+        <div class="setting-group">
+          <div class="setting-card about-card">
+            <img src="assets/images/app-logo.png" alt="SakuGame" class="about-logo">
+            <h3 class="about-title">SakuGame</h3>
+            <div class="about-tags">
+              <span class="version-tag">Versi 1.0.0</span>
+              <span class="offline-tag">📴 100% Offline</span>
+            </div>
+            <p class="about-desc">
+              Game santai untuk mengisi waktu luang di sakumu tanpa kuota, tanpa login, dan tanpa iklan.
+            </p>
+          </div>
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+
+  <!-- Alert Konfirmasi Reset Rekor -->
+  <ion-alert
+    [isOpen]="isResetAlertOpen"
+    header="Reset Semua Rekor?"
+    message="Seluruh catatan skor tertinggi di semua 5 game akan dikembalikan ke 0. Apakah kamu yakin?"
+    [buttons]="resetAlertButtons"
+    (didDismiss)="isResetAlertOpen = false"
+  ></ion-alert>
 </ion-content>

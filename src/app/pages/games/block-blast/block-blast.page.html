@@ -1,0 +1,148 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home" text=""></ion-back-button>
+    </ion-buttons>
+
+    <ion-title>
+      <div class="game-header-title">
+        <img src="assets/images/games/block-puzzle.png" alt="Puzzle Balok" class="header-logo-icon">
+        <span>Puzzle Balok</span>
+      </div>
+    </ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button (click)="soundService.toggleMute()" class="header-btn" aria-label="Toggle Sound">
+        <ion-icon [name]="soundService.isSoundMuted() ? 'volume-mute-outline' : 'volume-high-outline'"></ion-icon>
+      </ion-button>
+      <ion-button (click)="restartGame()" class="header-btn" aria-label="Restart">
+        <ion-icon name="refresh-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="game-content no-select" scrollY="false">
+  <!-- Score Bar -->
+  <div class="score-bar">
+    <div class="score-card current">
+      <span class="label">SKOR</span>
+      <span class="value">{{ score }}</span>
+      @if (combo > 1) {
+        <span class="combo-pill">Combo ×{{ combo }}!</span>
+      }
+    </div>
+
+    <div class="score-card trophy">
+      <span class="label">REKOR</span>
+      <span class="value">
+        <ion-icon name="trophy"></ion-icon>
+        {{ highScore }}
+      </span>
+    </div>
+  </div>
+
+  <!-- 8x8 Board Container -->
+  <div class="board-wrapper">
+    <div #boardRef class="grid-board">
+      @for (row of board; track r; let r = $index) {
+        <div class="board-row">
+          @for (cell of row; track c; let c = $index) {
+            <div
+              class="board-cell"
+              [class.filled]="cell.filled"
+              [class.clearing]="cell.clearing"
+              [class.ghost]="ghostGrid[r][c]"
+              [style.background-color]="cell.filled ? cell.color : ''"
+            ></div>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Bottom 3 Piece Slots -->
+  <div class="slots-tray">
+    @for (piece of pieces; track piece.id; let i = $index) {
+      <div
+        class="piece-slot"
+        [class.used]="piece.used"
+        (pointerdown)="onPiecePointerDown($event, piece, i)"
+      >
+        @if (!piece.used) {
+          <div class="piece-preview">
+            @for (pRow of piece.matrix; track rIdx; let rIdx = $index) {
+              <div class="piece-row">
+                @for (cell of pRow; track cIdx; let cIdx = $index) {
+                  <div
+                    class="piece-cell"
+                    [class.active]="cell === 1"
+                    [style.background-color]="cell === 1 ? piece.color : 'transparent'"
+                  ></div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Floating Dragged Element Following Finger -->
+  @if (isDragging && draggedPiece) {
+    <div
+      #dragPreviewRef
+      class="drag-preview-float"
+      [style.transform]="'translate3d(' + dragX + 'px, ' + dragY + 'px, 0) translate(-50%, -50%)'"
+    >
+      @for (pRow of draggedPiece.matrix; track rIdx; let rIdx = $index) {
+        <div class="piece-row">
+          @for (cell of pRow; track cIdx; let cIdx = $index) {
+            <div
+              class="piece-cell"
+              [class.active]="cell === 1"
+              [style.background-color]="cell === 1 ? draggedPiece.color : 'transparent'"
+            ></div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Game Over Modal Overlay -->
+  @if (isGameOver) {
+    <div class="game-over-overlay">
+      <div class="game-over-card">
+        <div class="trophy-badge">💥</div>
+        <h2>Papan Penuh!</h2>
+        <p>Tidak ada ruang tersisa untuk balok berikutnya.</p>
+
+        @if (isNewRecord) {
+          <span class="new-record-tag">🏆 Rekor Baru!</span>
+        }
+
+        <div class="score-stats">
+          <div class="stat-item">
+            <span class="stat-label">Skor Akhir</span>
+            <span class="stat-value">{{ score }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Rekor Terbaik</span>
+            <span class="stat-value">{{ highScore }}</span>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <ion-button expand="block" color="primary" (click)="restartGame()">
+            <ion-icon slot="start" name="refresh"></ion-icon>
+            Main Lagi
+          </ion-button>
+          <ion-button expand="block" fill="outline" color="medium" routerLink="/home">
+            <ion-icon slot="start" name="home"></ion-icon>
+            Kembali ke Menu
+          </ion-button>
+        </div>
+      </div>
+    </div>
+  }
+</ion-content>
